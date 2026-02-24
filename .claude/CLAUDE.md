@@ -1,5 +1,26 @@
+# Project: What To Eat
+
+## What This App Does
+
+This is an application which makes it possible to save, edit, share... recipes. Once a recipe has been saved, it can be made available for everyone, or saved only locally. Recipes contain a list of ingredients with the respective amount, the source from where the recipe was found and instructions as to how to prepare the recipe. Users can create groups so that every user in the group can add and view recipes. Recipes can be imported from various sources by specifying the URL and a dedicated scraper will have to be created for every source, but that will be in a later phase and I will delegate which scrapers will be created.
+
+## Who Are You
 
 You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
+
+## Tech Stack
+- **Frontend:** Angular 21+ (standalone components, signals-based state)
+- **Mobile:** Capacitor 6 for iOS/Android packaging
+- **Backend/DB:** Supabase (PostgreSQL, Auth, Realtime, Storage)
+- **Styling:** Angular Material 3
+- **Language:** TypeScript (strict mode always on)
+
+## Code Style
+- Always use `async/await` over `.then()` chains.
+- Always handle errors explicitly — no silent `catch` blocks that swallow errors.
+- Every public service method must have a JSDoc comment explaining what it does, its parameters, and what it returns.
+- Prefer small, single-responsibility functions. If a function exceeds ~40 lines, it should probably be split.
+- Use descriptive variable names. Never use single-letter variables outside of loop indices.
 
 ## TypeScript Best Practices
 
@@ -29,7 +50,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use `computed()` for derived state
 - Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
 - Prefer inline templates for small components
-- Prefer Reactive forms instead of Template-driven ones
+- Prefer signal based forms instead of Reactive forms and Template-driven ones
 - Do NOT use `ngClass`, use `class` bindings instead
 - Do NOT use `ngStyle`, use `style` bindings instead
 - When using external templates/styles, use paths relative to the component TS file.
@@ -40,6 +61,15 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use `computed()` for derived state
 - Keep state transformations pure and predictable
 - Do NOT use `mutate` on signals, use `update` or `set` instead
+
+## Localization
+
+- We will be using English as default language, but also implement Dutch localization
+- Use `@angular/localize` for localization
+- `ng-extract-i18n-merge` is installed and configured to extract text and create the localization files
+- Localization resides in `src/localization/`
+- Use static ids (eg `i18n=@@home-title`) in kebab-case
+- Do NOT provide Dutch translations, those will be added manually
 
 ## Templates
 
@@ -54,3 +84,30 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Design services around a single responsibility
 - Use the `providedIn: 'root'` option for singleton services
 - Use the `inject()` function instead of constructor injection
+
+## Supabase Conventions
+- The Supabase client is initialized once in `src/app/core/services/supabase.service.ts` and injected everywhere else.
+- All database queries use **typed responses** — always define and use TypeScript interfaces matching the database schema.
+- Row-Level Security (RLS) is enabled on all tables. Never disable it. If a query fails, fix the RLS policy, don't work around it.
+- Database migrations go in `supabase/migrations/` with the naming format `YYYYMMDDHHMMSS_description.sql`.
+- Never put secrets or service role keys in frontend code.
+- `supabase/seed.sql` provides a seeding script for test data. It should be kept up-to-date with each migration.
+
+## Testing
+- Write a basic unit test for every new service method using Vitest.
+- Do not write tests for simple component rendering unless asked.
+
+## What NOT To Do
+- Do not install new npm packages without asking me first and explaining why the package is needed.
+- Do not refactor existing working code unless the task explicitly calls for it.
+- Do not create barrel `index.ts` files — import directly from source files.
+- Do not use `any` as a TypeScript type. Ever.
+
+## Environment Variables
+Supabase keys live in `src/environments/environment.ts` (never committed) and `src/environments/environment.example.ts` (committed as a template).
+
+## Git Usage
+- When starting on a new feature, ALWAYS create a new `feature/` branch
+- This branch will be re-used until the feature has been manually checked and deemed complete
+- Pull requests will be used to review the branch and will be merged back into the main branch
+- For bug fixes, also always create a `bugfix/` branch, same strategy as feature branches

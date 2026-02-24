@@ -1,5 +1,9 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
+# Capacitor native projects
+android/
+ios/
+
 # Compiled output
 /dist
 /tmp
@@ -38,6 +42,9 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
+
+# Environment files (contain secrets)
+src/environments/environment.ts
 
 # System files
 .DS_Store
