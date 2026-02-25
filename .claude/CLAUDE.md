@@ -70,6 +70,11 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Localization resides in `src/localization/`
 - Use static ids (eg `i18n=@@home-title`) in kebab-case
 - Do NOT provide Dutch translations, those will be added manually
+- **ALL user-visible text in component templates MUST have an `i18n` attribute with a static kebab-case ID** — no exceptions
+- For text nodes inside control flow (`@if`, `@for`, etc.), wrap the text in `<ng-container i18n="@@id">` to avoid adding unwanted DOM elements (or use `i18n` directly on a semantic element if one is already present)
+- Interpolations (e.g. `{{ user.name }}`) inside an `i18n`-tagged element are fully supported — Angular replaces them with placeholders during extraction; put `i18n` on the parent element
+- Conditional text (different strings per state) must be split into separate `@if` blocks each with their own `i18n` attribute — never use ternary expressions inside interpolations for translatable text
+- Dynamic runtime strings (e.g. server error messages) cannot be statically translated and do NOT need an `i18n` attribute
 
 ## Templates
 
