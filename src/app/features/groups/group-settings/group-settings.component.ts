@@ -61,6 +61,8 @@ export class GroupSettingsComponent implements OnInit {
       this.groupService.memberships().find(m => m.group.id === this.groupId)?.role === 'admin',
   );
 
+  protected readonly isPersonal = computed(() => this.group()?.is_personal ?? false);
+
   protected readonly currentUserId = computed(() => this.auth.currentUser()?.id ?? '');
 
   // Async data

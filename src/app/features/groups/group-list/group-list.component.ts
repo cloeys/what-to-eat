@@ -33,11 +33,15 @@ import { GroupService } from '../../../core/services/group.service';
               <span matListItemTitle>{{ m.group.name }}</span>
               <div matListItemMeta class="item-meta">
                 <mat-chip-set>
-                  <mat-chip [class]="'role-chip role-' + m.role" disableRipple>
-                    {{ m.role }}
-                  </mat-chip>
+                  @if (m.group.is_personal) {
+                    <mat-chip class="role-chip role-personal" disableRipple>personal</mat-chip>
+                  } @else {
+                    <mat-chip [class]="'role-chip role-' + m.role" disableRipple>
+                      {{ m.role }}
+                    </mat-chip>
+                  }
                 </mat-chip-set>
-                @if (m.role === 'admin') {
+                @if (m.role === 'admin' && !m.group.is_personal) {
                   <a
                     mat-icon-button
                     [routerLink]="['/groups', m.group.id, 'settings']"
@@ -98,8 +102,9 @@ import { GroupService } from '../../../core/services/group.service';
     }
 
     .role-chip { font-size: 12px; min-height: 24px; }
-    .role-admin { background-color: var(--mat-sys-primary-container); color: var(--mat-sys-on-primary-container); }
-    .role-member { background-color: var(--mat-sys-surface-variant); color: var(--mat-sys-on-surface-variant); }
+    .role-admin    { background-color: var(--mat-sys-primary-container);   color: var(--mat-sys-on-primary-container); }
+    .role-member   { background-color: var(--mat-sys-surface-variant);     color: var(--mat-sys-on-surface-variant); }
+    .role-personal { background-color: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); }
   `,
 })
 export class GroupListComponent {

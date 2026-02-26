@@ -18,8 +18,16 @@
     </div>
   } @else {
 
-    <!-- ── Rename group (admin only) ───────────────────────────────────────── -->
-    @if (isAdmin()) {
+    <!-- ── Personal group notice ──────────────────────────────────────────── -->
+    @if (isPersonal()) {
+      <section class="settings-section personal-notice">
+        <mat-icon fontSet="material-symbols-outlined">lock</mat-icon>
+        <p>This is your personal group. It cannot be renamed or shared with others.</p>
+      </section>
+    }
+
+    <!-- ── Rename group (admin only, non-personal) ──────────────────────── -->
+    @if (isAdmin() && !isPersonal()) {
       <section class="settings-section">
         <h2>Group name</h2>
         <form [formGroup]="renameForm" (ngSubmit)="rename()" class="rename-form">
@@ -85,8 +93,8 @@
       </mat-list>
     </section>
 
-    <!-- ── Invitations (admin only) ────────────────────────────────────────── -->
-    @if (isAdmin()) {
+    <!-- ── Invitations (admin only, non-personal) ──────────────────────────── -->
+    @if (isAdmin() && !isPersonal()) {
       <mat-divider />
 
       <section class="settings-section">

@@ -56,6 +56,19 @@ h3 {
   font: var(--mat-sys-body-medium);
 }
 
+/* Personal group notice */
+.personal-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--mat-sys-surface-variant);
+  border-radius: 8px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.personal-notice p { margin: 0; font: var(--mat-sys-body-medium); }
+
 /* Member + invitation items */
 .member-item,
 .invitation-item { height: auto !important; padding: 4px 0; }
