@@ -1,0 +1,151 @@
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <a mat-icon-button routerLink="/groups" aria-label="Back to groups">
+      <mat-icon fontSet="material-symbols-outlined">arrow_back</mat-icon>
+    </a>
+    <h1>{{ group()?.name ?? 'Group' }} — Settings</h1>
+  </div>
+
+  @if (error()) {
+    <p class="error-message">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-progress-spinner mode="indeterminate" diameter="40" />
+    </div>
+  } @else {
+
+    <!-- ── Rename group (admin only) ───────────────────────────────────────── -->
+    @if (isAdmin()) {
+      <section class="settings-section">
+        <h2>Group name</h2>
+        <form [formGroup]="renameForm" (ngSubmit)="rename()" class="rename-form">
+          <mat-form-field appearance="outline" class="name-field">
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="name" maxlength="80" autocomplete="off" />
+            @if (renameForm.controls.name.hasError('required')) {
+              <mat-error>Name is required</mat-error>
+            } @else if (renameForm.controls.name.hasError('maxlength')) {
+              <mat-error>Name must be 80 characters or fewer</mat-error>
+            }
+            <mat-hint align="end">{{ renameForm.controls.name.value.length }}/80</mat-hint>
+          </mat-form-field>
+
+          <div class="rename-actions">
+            <button mat-flat-button type="submit" [disabled]="renameLoading()">
+              @if (renameLoading()) {
+                <mat-progress-spinner mode="indeterminate" diameter="20" />
+              }
+              Save name
+            </button>
+            @if (renameSuccess()) {
+              <span class="success-text">
+                <mat-icon fontSet="material-symbols-outlined">check_circle</mat-icon>
+                Saved
+              </span>
+            }
+          </div>
+        </form>
+      </section>
+
+      <mat-divider />
+    }
+
+    <!-- ── Members ─────────────────────────────────────────────────────────── -->
+    <section class="settings-section">
+      <h2>Members ({{ members().length }})</h2>
+      <mat-list>
+        @for (member of members(); track member.id) {
+          <mat-list-item class="member-item">
+            <mat-icon matListItemIcon fontSet="material-symbols-outlined">account_circle</mat-icon>
+            <span matListItemTitle>{{ memberDisplayName(member) }}</span>
+            <div matListItemMeta class="item-meta">
+              <mat-chip-set>
+                <mat-chip [class]="'role-chip role-' + member.role" disableRipple>
+                  {{ member.role }}
+                </mat-chip>
+              </mat-chip-set>
+              <!-- Admins can remove anyone; members can only remove themselves -->
+              @if (isAdmin() || member.user_id === currentUserId()) {
+                <button
+                  mat-icon-button
+                  (click)="removeMember(member.user_id)"
+                  [attr.aria-label]="member.user_id === currentUserId() ? 'Leave group' : 'Remove member'">
+                  <mat-icon fontSet="material-symbols-outlined">
+                    {{ member.user_id === currentUserId() ? 'logout' : 'person_remove' }}
+                  </mat-icon>
+                </button>
+              }
+            </div>
+          </mat-list-item>
+        }
+      </mat-list>
+    </section>
+
+    <!-- ── Invitations (admin only) ────────────────────────────────────────── -->
+    @if (isAdmin()) {
+      <mat-divider />
+
+      <section class="settings-section">
+        <h2>Invite someone</h2>
+
+        <form [formGroup]="inviteForm" (ngSubmit)="inviteMember()" class="invite-form">
+          <mat-form-field appearance="outline" class="email-field">
+            <mat-label>Email address</mat-label>
+            <input matInput type="email" formControlName="email" autocomplete="email" />
+            @if (inviteForm.controls.email.hasError('required')) {
+              <mat-error>Email is required</mat-error>
+            } @else if (inviteForm.controls.email.hasError('email')) {
+              <mat-error>Enter a valid email address</mat-error>
+            }
+          </mat-form-field>
+
+          <button mat-flat-button type="submit" [disabled]="inviteLoading()">
+            @if (inviteLoading()) {
+              <mat-progress-spinner mode="indeterminate" diameter="20" />
+            }
+            Create invitation
+          </button>
+        </form>
+
+        @if (inviteLink()) {
+          <div class="invite-link-box">
+            <p class="invite-link-label">Share this link with the person you're inviting:</p>
+            <div class="invite-link">
+              <code>{{ inviteLink() }}</code>
+            </div>
+            <p class="invite-link-note">
+              This link expires in 7 days. Email delivery is not yet enabled — copy and send it manually.
+            </p>
+          </div>
+        }
+
+        @if (invitations().length > 0) {
+          <h3>Pending invitations</h3>
+          <mat-list>
+            @for (inv of invitations(); track inv.id) {
+              <mat-list-item class="invitation-item">
+                <mat-icon matListItemIcon fontSet="material-symbols-outlined">mail</mat-icon>
+                <span matListItemTitle>{{ inv.email }}</span>
+                <span matListItemLine class="expires-text">
+                  Expires {{ inv.expires_at | date: 'mediumDate' }}
+                </span>
+                <button
+                  matListItemMeta
+                  mat-icon-button
+                  (click)="revokeInvitation(inv.id)"
+                  aria-label="Revoke invitation">
+                  <mat-icon fontSet="material-symbols-outlined">cancel</mat-icon>
+                </button>
+              </mat-list-item>
+            }
+          </mat-list>
+        }
+      </section>
+    }
+
+  }
+</div>

@@ -14,6 +14,15 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/callback/callback.component').then(m => m.AuthCallbackComponent),
   },
+  {
+    // Public invitation acceptance — no auth guard; the component handles
+    // unauthenticated users by redirecting to /login?returnUrl=...
+    path: 'invitations/:token',
+    loadComponent: () =>
+      import('./features/groups/invitation-accept/invitation-accept.component').then(
+        m => m.InvitationAcceptComponent,
+      ),
+  },
 
   // ── Authenticated shell (all protected routes render inside ShellComponent) ─
   {
@@ -43,10 +52,8 @@ export const routes: Routes = [
       },
       {
         path: 'groups',
-        loadComponent: () =>
-          import('./features/groups/group-list/group-list.component').then(
-            m => m.GroupListComponent,
-          ),
+        loadChildren: () =>
+          import('./features/groups/groups.routes').then(m => m.GROUPS_ROUTES),
       },
     ],
   },

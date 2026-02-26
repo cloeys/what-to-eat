@@ -427,6 +427,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: { Args: { p_token: string }; Returns: undefined }
+      create_group: { Args: { p_name: string }; Returns: string }
+      decline_invitation: { Args: { p_token: string }; Returns: undefined }
       is_group_admin: { Args: { p_group_id: string }; Returns: boolean }
       is_group_member: { Args: { p_group_id: string }; Returns: boolean }
     }
