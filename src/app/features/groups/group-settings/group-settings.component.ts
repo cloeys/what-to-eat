@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   OnInit,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -87,6 +89,17 @@ export class GroupSettingsComponent implements OnInit {
   protected readonly inviteLoading = signal(false);
   protected readonly inviteLink = signal<string | null>(null);
 
+  constructor() {
+    // Reactively prefill the rename form whenever the group name resolves or changes.
+    // Using effect() guarantees the form is populated regardless of async timing.
+    effect(() => {
+      const name = this.group()?.name;
+      if (name != null) {
+        untracked(() => this.renameForm.controls.name.setValue(name));
+      }
+    });
+  }
+
   async ngOnInit(): Promise<void> {
     await this.loadData();
   }
@@ -101,7 +114,6 @@ export class GroupSettingsComponent implements OnInit {
       ]);
       this.members.set(members);
       this.invitations.set(invitations);
-      this.renameForm.controls.name.setValue(this.group()?.name ?? '');
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load group settings.');
     } finally {

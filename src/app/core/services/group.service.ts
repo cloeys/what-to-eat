@@ -85,7 +85,7 @@ export class GroupService {
       .eq('user_id', userId)
       .order('joined_at');
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
 
     const memberships = (data as { role: GroupRole; groups: Group | null }[])
       .filter((m): m is { role: GroupRole; groups: Group } => m.groups !== null)
@@ -115,7 +115,7 @@ export class GroupService {
       p_name: name,
     });
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
 
     await this.loadGroups();
 
@@ -137,11 +137,14 @@ export class GroupService {
       .update({ name: name.trim() })
       .eq('id', groupId);
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
 
     // Update the local signal so the shell nav reflects the new name immediately
     this._groups.update(gs =>
       gs.map(g => (g.id === groupId ? { ...g, name: name.trim() } : g)),
+    );
+    this._memberships.update(ms =>
+      ms.map(m => (m.group.id === groupId ? { ...m, group: { ...m.group, name: name.trim() } } : m)),
     );
   }
 
@@ -168,18 +171,31 @@ export class GroupService {
   // ── Member management ─────────────────────────────────────────────────────
 
   /**
-   * Fetches all members of a group, including their public profile data.
+   * Fetches all members of a group with their profile data.
+   * Uses two separate queries because PostgREST cannot resolve the implicit
+   * relationship between group_members.user_id and profiles.id (both reference
+   * auth.users, but there is no direct FK between them in the public schema).
    * @param groupId The ID of the group whose members to fetch.
    */
   async fetchMembers(groupId: string): Promise<GroupMemberWithProfile[]> {
-    const { data, error } = await this.supabase
+    const { data: members, error: membersError } = await this.supabase
       .from('group_members')
-      .select('*, profiles(*)')
+      .select('*')
       .eq('group_id', groupId)
       .order('joined_at');
 
-    if (error) throw error;
-    return data as unknown as GroupMemberWithProfile[];
+    if (membersError) throw new Error(membersError.message);
+    if (!members || members.length === 0) return [];
+
+    const { data: profiles, error: profilesError } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .in('id', members.map(m => m.user_id));
+
+    if (profilesError) throw new Error(profilesError.message);
+
+    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
+    return members.map(m => ({ ...m, profiles: profileMap.get(m.user_id) ?? null }));
   }
 
   /**
@@ -195,7 +211,7 @@ export class GroupService {
       .eq('group_id', groupId)
       .eq('user_id', userId);
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
 
     // If the removed user is the current user, reload the group list
     if (userId === this.auth.currentUser()?.id) {
@@ -217,7 +233,7 @@ export class GroupService {
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data;
   }
 
@@ -240,7 +256,7 @@ export class GroupService {
       .select('token')
       .single();
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data.token;
   }
 
@@ -254,7 +270,7 @@ export class GroupService {
       .delete()
       .eq('id', invitationId);
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
   }
 
   /**
@@ -270,7 +286,7 @@ export class GroupService {
       .eq('token', token)
       .maybeSingle();
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return data as GroupInvitationWithGroup | null;
   }
 
@@ -284,7 +300,7 @@ export class GroupService {
       p_token: token,
     });
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
 
     await this.loadGroups();
   }
@@ -298,6 +314,6 @@ export class GroupService {
       p_token: token,
     });
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
   }
 }
