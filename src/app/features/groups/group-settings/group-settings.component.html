@@ -76,8 +76,8 @@
                   {{ member.role }}
                 </mat-chip>
               </mat-chip-set>
-              <!-- Admins can remove anyone; members can only remove themselves -->
-              @if (isAdmin() || member.user_id === currentUserId()) {
+              <!-- Admins can remove anyone; members can only leave; neither applies to personal groups -->
+              @if (!isPersonal() && (isAdmin() || member.user_id === currentUserId())) {
                 <button
                   mat-icon-button
                   (click)="removeMember(member.user_id)"

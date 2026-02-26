@@ -435,6 +435,7 @@ export type Database = {
       decline_invitation: { Args: { p_token: string }; Returns: undefined }
       is_group_admin: { Args: { p_group_id: string }; Returns: boolean }
       is_group_member: { Args: { p_group_id: string }; Returns: boolean }
+      leave_group: { Args: { p_group_id: string }; Returns: undefined }
     }
     Enums: {
       group_role: "admin" | "member"

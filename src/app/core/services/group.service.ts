@@ -199,8 +199,7 @@ export class GroupService {
   }
 
   /**
-   * Removes a member from a group. Requires the caller to be an admin,
-   * or the caller to be removing themselves.
+   * Removes a member from a group. Requires the caller to be an admin.
    * @param groupId The group to remove the member from.
    * @param userId  The ID of the user to remove.
    */
@@ -212,11 +211,22 @@ export class GroupService {
       .eq('user_id', userId);
 
     if (error) throw new Error(error.message);
+  }
 
-    // If the removed user is the current user, reload the group list
-    if (userId === this.auth.currentUser()?.id) {
-      await this.loadGroups();
-    }
+  /**
+   * Removes the current user from a group via the leave_group RPC, which
+   * atomically promotes another member to admin if the caller is the last admin.
+   * Callers should navigate away after this resolves.
+   * @param groupId The group to leave.
+   */
+  async leaveGroup(groupId: string): Promise<void> {
+    const { error } = await this.supabase.rpc('leave_group', {
+      p_group_id: groupId,
+    });
+
+    if (error) throw new Error(error.message);
+
+    await this.loadGroups();
   }
 
   // ── Invitation management ─────────────────────────────────────────────────

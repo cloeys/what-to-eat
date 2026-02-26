@@ -9,10 +9,12 @@ import {
   untracked,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,6 +27,10 @@ import {
   GroupMemberWithProfile,
   GroupService,
 } from '../../../core/services/group.service';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-group-settings',
@@ -35,6 +41,7 @@ import {
     DatePipe,
     MatButtonModule,
     MatChipsModule,
+    MatDialogModule,
     MatDividerModule,
     MatFormFieldModule,
     MatIconModule,
@@ -49,6 +56,8 @@ export class GroupSettingsComponent implements OnInit {
   private readonly groupService = inject(GroupService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly groupId = this.route.snapshot.paramMap.get('groupId')!;
 
@@ -93,7 +102,6 @@ export class GroupSettingsComponent implements OnInit {
 
   constructor() {
     // Reactively prefill the rename form whenever the group name resolves or changes.
-    // Using effect() guarantees the form is populated regardless of async timing.
     effect(() => {
       const name = this.group()?.name;
       if (name != null) {
@@ -123,6 +131,12 @@ export class GroupSettingsComponent implements OnInit {
     }
   }
 
+  private confirm(data: ConfirmDialogData): Promise<boolean> {
+    return firstValueFrom(
+      this.dialog.open(ConfirmDialogComponent, { data, width: '360px' }).afterClosed(),
+    ).then(result => result === true);
+  }
+
   protected async rename(): Promise<void> {
     if (this.renameForm.invalid) {
       this.renameForm.markAllAsTouched();
@@ -142,16 +156,50 @@ export class GroupSettingsComponent implements OnInit {
   }
 
   protected async removeMember(userId: string): Promise<void> {
+    const isSelf = userId === this.currentUserId();
+
+    const confirmed = await this.confirm(
+      isSelf
+        ? {
+            title: 'Leave group',
+            message: `Are you sure you want to leave "${this.group()?.name}"? If you are the only admin, another member will be promoted automatically.`,
+            confirmLabel: 'Leave',
+            confirmColor: 'warn',
+          }
+        : {
+            title: 'Remove member',
+            message: `Remove ${this.memberDisplayName(this.members().find(m => m.user_id === userId)!)} from the group?`,
+            confirmLabel: 'Remove',
+            confirmColor: 'warn',
+          },
+    );
+
+    if (!confirmed) return;
+
     this.error.set(null);
     try {
-      await this.groupService.removeMember(this.groupId, userId);
-      this.members.update(ms => ms.filter(m => m.user_id !== userId));
+      if (isSelf) {
+        await this.groupService.leaveGroup(this.groupId);
+        this.router.navigate(['/groups']);
+      } else {
+        await this.groupService.removeMember(this.groupId, userId);
+        this.members.update(ms => ms.filter(m => m.user_id !== userId));
+      }
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'Failed to remove member.');
+      this.error.set(err instanceof Error ? err.message : 'Failed to update members.');
     }
   }
 
   protected async revokeInvitation(invitationId: string): Promise<void> {
+    const confirmed = await this.confirm({
+      title: 'Revoke invitation',
+      message: 'Cancel this invitation? The recipient will no longer be able to join using the link.',
+      confirmLabel: 'Revoke',
+      confirmColor: 'warn',
+    });
+
+    if (!confirmed) return;
+
     this.error.set(null);
     try {
       await this.groupService.revokeInvitation(invitationId);
@@ -176,7 +224,6 @@ export class GroupSettingsComponent implements OnInit {
       );
       this.inviteLink.set(`${window.location.origin}/invitations/${token}`);
       this.inviteForm.reset();
-      // Refresh invitations list
       const invitations = await this.groupService.fetchInvitations(this.groupId);
       this.invitations.set(invitations);
     } catch (err) {
