@@ -1,0 +1,102 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.sidenav-container {
+  height: 100%;
+}
+
+/* ── Sidenav ─────────────────────────────────────────────────────────────── */
+
+.sidenav {
+  width: 264px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.sidenav-header {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.app-title {
+  font: var(--mat-sys-title-large);
+  color: var(--mat-sys-on-surface);
+  white-space: nowrap;
+}
+
+/* ── Group switcher ──────────────────────────────────────────────────────── */
+
+.group-switcher {
+  padding: 16px 16px 8px;
+}
+
+.group-form-field {
+  width: 100%;
+}
+
+/* ── Navigation list ─────────────────────────────────────────────────────── */
+
+/* Active link highlight using the accent colour token */
+:host ::ng-deep .active-link {
+  background-color: var(--mat-sys-secondary-container) !important;
+  color: var(--mat-sys-on-secondary-container) !important;
+  border-radius: 28px;
+}
+
+:host ::ng-deep .active-link .mat-icon,
+:host ::ng-deep .active-link [matListItemTitle] {
+  color: var(--mat-sys-on-secondary-container);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.sidenav-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  overflow: hidden;
+}
+
+.user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sign-out-btn {
+  width: 100%;
+}
+
+/* ── Main content ────────────────────────────────────────────────────────── */
+
+.mobile-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.toolbar-title {
+  font: var(--mat-sys-title-large);
+  margin-left: 8px;
+}
+
+.content-container {
+  padding: 24px;
+  height: 100%;
+  box-sizing: border-box;
+}

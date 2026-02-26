@@ -1,0 +1,88 @@
+<mat-sidenav-container class="sidenav-container">
+
+  <mat-sidenav
+    #drawer
+    class="sidenav"
+    [attr.role]="isHandset() ? 'dialog' : 'navigation'"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()">
+
+    <!-- App title -->
+    <div class="sidenav-header">
+      <span class="app-title" i18n="@@shell-app-title">What to Eat</span>
+    </div>
+
+    <!-- Group switcher -->
+    <div class="group-switcher">
+      <mat-form-field appearance="outline" class="group-form-field">
+        <mat-label i18n="@@shell-group-label">Group</mat-label>
+        <mat-select
+          [value]="groupService.activeGroupId()"
+          (selectionChange)="onGroupChange($event.value)"
+          aria-label="Select active group"
+          i18n-aria-label="@@shell-group-aria">
+          @for (group of groupService.groups(); track group.id) {
+            <mat-option [value]="group.id">{{ group.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Navigation links -->
+    <mat-nav-list>
+      <a mat-list-item routerLink="/recipes" routerLinkActive="active-link">
+        <mat-icon matListItemIcon fontSet="material-symbols-outlined">menu_book</mat-icon>
+        <span matListItemTitle i18n="@@shell-nav-recipes">Recipes</span>
+      </a>
+      <a mat-list-item routerLink="/calendar" routerLinkActive="active-link">
+        <mat-icon matListItemIcon fontSet="material-symbols-outlined">calendar_month</mat-icon>
+        <span matListItemTitle i18n="@@shell-nav-calendar">Calendar</span>
+      </a>
+      <a mat-list-item routerLink="/groups" routerLinkActive="active-link">
+        <mat-icon matListItemIcon fontSet="material-symbols-outlined">group</mat-icon>
+        <span matListItemTitle i18n="@@shell-nav-groups">Groups</span>
+      </a>
+    </mat-nav-list>
+
+    <!-- User info + sign out -->
+    <div class="sidenav-footer">
+      <div class="user-info">
+        <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">account_circle</mat-icon>
+        <span class="user-name">
+          {{ auth.currentUser()?.user_metadata?.['full_name'] ?? auth.currentUser()?.email }}
+        </span>
+      </div>
+      <button
+        mat-button
+        class="sign-out-btn"
+        (click)="signOut()"
+        i18n="@@shell-sign-out">
+        Sign out
+      </button>
+    </div>
+
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+
+    <!-- Mobile top toolbar with hamburger button -->
+    @if (isHandset()) {
+      <mat-toolbar class="mobile-toolbar">
+        <button
+          mat-icon-button
+          (click)="drawer.toggle()"
+          aria-label="Toggle navigation menu"
+          i18n-aria-label="@@shell-toggle-nav-aria">
+          <mat-icon fontSet="material-symbols-outlined">menu</mat-icon>
+        </button>
+        <span class="toolbar-title" i18n="@@shell-app-title-mobile">What to Eat</span>
+      </mat-toolbar>
+    }
+
+    <div class="content-container">
+      <router-outlet />
+    </div>
+
+  </mat-sidenav-content>
+
+</mat-sidenav-container>
