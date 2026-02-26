@@ -56,7 +56,9 @@ export class AuthCallbackComponent implements OnInit {
     await this.auth.initialized;
 
     if (this.auth.isAuthenticated()) {
-      await this.router.navigate(['/']);
+      const returnUrl = sessionStorage.getItem('auth_return_url') ?? '/';
+      sessionStorage.removeItem('auth_return_url');
+      await this.router.navigateByUrl(returnUrl);
       return;
     }
 
@@ -66,7 +68,9 @@ export class AuthCallbackComponent implements OnInit {
     if (code) {
       try {
         await this.auth.exchangeOAuthCode(code);
-        await this.router.navigate(['/']);
+        const returnUrl = sessionStorage.getItem('auth_return_url') ?? '/';
+        sessionStorage.removeItem('auth_return_url');
+        await this.router.navigateByUrl(returnUrl);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Authentication failed.';
         await this.router.navigate(['/login'], { queryParams: { error: message } });

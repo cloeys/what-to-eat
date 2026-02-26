@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle } from '@angular/material/card';
 import { MatDivider } from '@angular/material/divider';
-import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
@@ -19,7 +19,7 @@ import { AuthService } from '../../../core/services/auth.service';
     MatButton,
     MatCard, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle,
     MatDivider,
-    MatError, MatFormField, MatHint, MatLabel,
+    MatError, MatFormField, MatLabel,
     MatInput,
     MatProgressSpinner,
   ],
@@ -34,6 +34,10 @@ export class LoginComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly confirmationSent = signal(false);
 
+  /** Destination after a successful sign-in. Defaults to '/' unless a
+   *  relative returnUrl query param is present (e.g. from the invitation flow). */
+  private returnUrl = '/';
+
   protected readonly form = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(6)] }),
@@ -46,9 +50,17 @@ export class LoginComponent implements OnInit {
       this.error.set(errorParam);
     }
 
+    // Honour a returnUrl from the query param OR from sessionStorage (written by
+    // pages that redirect unauthenticated users to login). Only relative URLs
+    // are accepted to prevent open-redirect attacks.
+    const fromQuery   = this.route.snapshot.queryParamMap.get('returnUrl') ?? '';
+    const fromStorage = sessionStorage.getItem('auth_return_url') ?? '';
+    const raw = fromQuery || fromStorage;
+    this.returnUrl = raw.startsWith('/') ? raw : '/';
+
     await this.auth.initialized;
     if (this.auth.isAuthenticated()) {
-      await this.router.navigate(['/']);
+      await this.router.navigateByUrl(this.returnUrl);
     }
   }
 
@@ -70,9 +82,15 @@ export class LoginComponent implements OnInit {
   protected async signInWithGoogle(): Promise<void> {
     this.loading.set('google');
     this.error.set(null);
+    // Ensure the returnUrl survives the full browser redirect round-trip to
+    // Google and back to /auth/callback where sessionStorage will be read.
+    if (this.returnUrl !== '/') {
+      sessionStorage.setItem('auth_return_url', this.returnUrl);
+    }
     try {
       await this.auth.signInWithGoogle();
     } catch (err) {
+      sessionStorage.removeItem('auth_return_url');
       this.error.set(err instanceof Error ? err.message : 'Sign-in failed. Please try again.');
       this.loading.set(null);
     }
@@ -98,13 +116,15 @@ export class LoginComponent implements OnInit {
         }
         await this.auth.signUpWithEmail(email, password);
         if (this.auth.isAuthenticated()) {
-          await this.router.navigate(['/']);
+          sessionStorage.removeItem('auth_return_url');
+          await this.router.navigateByUrl(this.returnUrl);
         } else {
           this.confirmationSent.set(true);
         }
       } else {
         await this.auth.signInWithEmail(email, password);
-        await this.router.navigate(['/']);
+        sessionStorage.removeItem('auth_return_url');
+        await this.router.navigateByUrl(this.returnUrl);
       }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Authentication failed. Please try again.');
