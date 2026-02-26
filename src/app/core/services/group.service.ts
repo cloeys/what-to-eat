@@ -314,7 +314,24 @@ export class GroupService {
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    return data as GroupInvitationWithGroup | null;
+    if (!data) return null;
+
+    const inv = data as GroupInvitationWithGroup;
+
+    // The PostgREST join returns null when the invitee's RLS on the groups table
+    // has not yet resolved (e.g. policy propagation delay) or when the join is
+    // blocked. Fall back to a direct query so the group name always shows.
+    if (!inv.groups) {
+      const { data: group } = await this.supabase
+        .from('groups')
+        .select('id, name')
+        .eq('id', inv.group_id)
+        .maybeSingle();
+
+      if (group) inv.groups = group as { id: string; name: string };
+    }
+
+    return inv;
   }
 
   /**

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,7 +14,7 @@ import {
 @Component({
   selector: 'app-invitation-accept',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [RouterLink, MatButtonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule],
   template: `
     <div class="page-container">
       <mat-card class="invitation-card">
@@ -28,26 +28,38 @@ import {
           <mat-card-content class="centered">
             <mat-icon fontSet="material-symbols-outlined" class="status-icon success-icon">check_circle</mat-icon>
             <h2>You're in!</h2>
-            <p>You've joined <strong>{{ invitation()?.groups?.name }}</strong>. Redirecting…</p>
+            <p>You've joined <strong>{{ invitation()?.groups?.name }}</strong>.</p>
           </mat-card-content>
+          <mat-card-actions align="end">
+            <a mat-flat-button routerLink="/recipes">Go to recipes</a>
+          </mat-card-actions>
         } @else if (done() === 'declined') {
           <mat-card-content class="centered">
             <mat-icon fontSet="material-symbols-outlined" class="status-icon">cancel</mat-icon>
             <h2>Invitation declined</h2>
             <p>You declined the invitation to join <strong>{{ invitation()?.groups?.name }}</strong>.</p>
           </mat-card-content>
+          <mat-card-actions align="end">
+            <a mat-flat-button routerLink="/">Go to home</a>
+          </mat-card-actions>
         } @else if (error()) {
           <mat-card-content class="centered">
             <mat-icon fontSet="material-symbols-outlined" class="status-icon error-icon">error</mat-icon>
             <h2>Something went wrong</h2>
             <p>{{ error() }}</p>
           </mat-card-content>
+          <mat-card-actions align="end">
+            <a mat-button routerLink="/">Go to home</a>
+          </mat-card-actions>
         } @else if (!invitation()) {
           <mat-card-content class="centered">
             <mat-icon fontSet="material-symbols-outlined" class="status-icon">link_off</mat-icon>
             <h2>Invitation not found</h2>
             <p>This invitation link is invalid, has already been used, or has expired.</p>
           </mat-card-content>
+          <mat-card-actions align="end">
+            <a mat-button routerLink="/">Go to home</a>
+          </mat-card-actions>
         } @else {
           <mat-card-header>
             <mat-card-title>You've been invited</mat-card-title>
@@ -194,7 +206,6 @@ export class InvitationAcceptComponent implements OnInit {
     try {
       await this.groupService.acceptInvitation(this.token);
       this.done.set('accepted');
-      setTimeout(() => this.router.navigate(['/recipes']), 2000);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to accept invitation.');
       this.actionLoading.set(null);
