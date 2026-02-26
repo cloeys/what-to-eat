@@ -173,6 +173,21 @@ export class GroupService {
   // ── Member management ─────────────────────────────────────────────────────
 
   /**
+   * Fetches a single user profile by ID. Returns null if not found.
+   * @param userId The auth user ID whose profile to fetch.
+   */
+  async fetchProfile(userId: string): Promise<Profile | null> {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  /**
    * Fetches all members of a group with their profile data.
    * Uses two separate queries because PostgREST cannot resolve the implicit
    * relationship between group_members.user_id and profiles.id (both reference

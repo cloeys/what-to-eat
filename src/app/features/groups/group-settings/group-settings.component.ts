@@ -209,6 +209,11 @@ export class GroupSettingsComponent implements OnInit {
     }
   }
 
+  protected clearInviteLink(): void {
+    this.inviteLink.set(null);
+    this.inviteForm.reset();
+  }
+
   protected async inviteMember(): Promise<void> {
     if (this.inviteForm.invalid) {
       this.inviteForm.markAllAsTouched();

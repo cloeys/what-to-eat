@@ -5,7 +5,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
-import { GroupInvitationWithGroup, GroupService } from '../../../core/services/group.service';
+import {
+  GroupInvitationWithGroup,
+  GroupService,
+  Profile,
+} from '../../../core/services/group.service';
 
 @Component({
   selector: 'app-invitation-accept',
@@ -50,9 +54,16 @@ import { GroupInvitationWithGroup, GroupService } from '../../../core/services/g
             <mat-card-subtitle>Join a group on What to Eat</mat-card-subtitle>
           </mat-card-header>
           <mat-card-content>
-            <div class="group-name-display">
-              <mat-icon fontSet="material-symbols-outlined" class="group-icon">group</mat-icon>
-              <span class="group-name">{{ invitation()?.groups?.name }}</span>
+            <div class="group-info-box">
+              <div class="group-name-row">
+                <mat-icon fontSet="material-symbols-outlined" class="group-icon">group</mat-icon>
+                <span class="group-name">{{ invitation()?.groups?.name }}</span>
+              </div>
+              @if (inviterProfile()) {
+                <p class="invited-by">
+                  Invited by <strong>{{ inviterProfile()!.display_name }}</strong>
+                </p>
+              }
             </div>
           </mat-card-content>
           <mat-card-actions align="end">
@@ -111,18 +122,30 @@ import { GroupInvitationWithGroup, GroupService } from '../../../core/services/g
     h2 { font: var(--mat-sys-headline-small); margin: 0; }
     p  { margin: 0; }
 
-    .group-name-display {
+    .group-info-box {
+      border-radius: 12px;
+      background: var(--mat-sys-surface-variant);
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .group-name-row {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 16px;
-      border-radius: 12px;
-      background: var(--mat-sys-surface-variant);
-      margin-top: 8px;
     }
 
-    .group-icon { font-size: 32px; width: 32px; height: 32px; }
+    .group-icon { font-size: 32px; width: 32px; height: 32px; flex-shrink: 0; }
     .group-name { font: var(--mat-sys-title-large); }
+
+    .invited-by {
+      padding: 8px 16px 12px;
+      margin: 0;
+      border-top: 1px solid var(--mat-sys-outline-variant);
+      font: var(--mat-sys-body-medium);
+      color: var(--mat-sys-on-surface-variant);
+    }
   `,
 })
 export class InvitationAcceptComponent implements OnInit {
@@ -134,6 +157,7 @@ export class InvitationAcceptComponent implements OnInit {
   private readonly token = this.route.snapshot.paramMap.get('token')!;
 
   protected readonly invitation = signal<GroupInvitationWithGroup | null>(null);
+  protected readonly inviterProfile = signal<Profile | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly actionLoading = signal<'accept' | 'decline' | null>(null);
@@ -152,6 +176,11 @@ export class InvitationAcceptComponent implements OnInit {
     try {
       const inv = await this.groupService.fetchInvitationByToken(this.token);
       this.invitation.set(inv);
+
+      if (inv?.invited_by) {
+        const profile = await this.groupService.fetchProfile(inv.invited_by);
+        this.inviterProfile.set(profile);
+      }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load invitation.');
     } finally {

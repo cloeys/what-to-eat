@@ -119,3 +119,5 @@ h3 {
   font: var(--mat-sys-body-small);
   opacity: 0.7;
 }
+
+.invite-another-btn { margin-top: 12px; }
