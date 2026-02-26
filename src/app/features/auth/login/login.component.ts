@@ -50,9 +50,13 @@ export class LoginComponent implements OnInit {
       this.error.set(errorParam);
     }
 
-    // Only honour relative returnUrls to prevent open-redirect attacks.
-    const rawReturn = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
-    this.returnUrl = rawReturn.startsWith('/') ? rawReturn : '/';
+    // Honour a returnUrl from the query param OR from sessionStorage (written by
+    // pages that redirect unauthenticated users to login). Only relative URLs
+    // are accepted to prevent open-redirect attacks.
+    const fromQuery   = this.route.snapshot.queryParamMap.get('returnUrl') ?? '';
+    const fromStorage = sessionStorage.getItem('auth_return_url') ?? '';
+    const raw = fromQuery || fromStorage;
+    this.returnUrl = raw.startsWith('/') ? raw : '/';
 
     await this.auth.initialized;
     if (this.auth.isAuthenticated()) {
@@ -78,9 +82,15 @@ export class LoginComponent implements OnInit {
   protected async signInWithGoogle(): Promise<void> {
     this.loading.set('google');
     this.error.set(null);
+    // Ensure the returnUrl survives the full browser redirect round-trip to
+    // Google and back to /auth/callback where sessionStorage will be read.
+    if (this.returnUrl !== '/') {
+      sessionStorage.setItem('auth_return_url', this.returnUrl);
+    }
     try {
       await this.auth.signInWithGoogle();
     } catch (err) {
+      sessionStorage.removeItem('auth_return_url');
       this.error.set(err instanceof Error ? err.message : 'Sign-in failed. Please try again.');
       this.loading.set(null);
     }
@@ -106,12 +116,14 @@ export class LoginComponent implements OnInit {
         }
         await this.auth.signUpWithEmail(email, password);
         if (this.auth.isAuthenticated()) {
+          sessionStorage.removeItem('auth_return_url');
           await this.router.navigateByUrl(this.returnUrl);
         } else {
           this.confirmationSent.set(true);
         }
       } else {
         await this.auth.signInWithEmail(email, password);
+        sessionStorage.removeItem('auth_return_url');
         await this.router.navigateByUrl(this.returnUrl);
       }
     } catch (err) {

@@ -433,6 +433,16 @@ export type Database = {
       accept_invitation: { Args: { p_token: string }; Returns: undefined }
       create_group: { Args: { p_name: string }; Returns: string }
       decline_invitation: { Args: { p_token: string }; Returns: undefined }
+      get_invitation_preview: {
+        Args: { p_token: string }
+        Returns: Database["public"]["CompositeTypes"]["invitation_preview"]
+        SetofOptions: {
+          from: "*"
+          to: "invitation_preview"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       is_group_admin: { Args: { p_group_id: string }; Returns: boolean }
       is_group_member: { Args: { p_group_id: string }; Returns: boolean }
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
@@ -442,7 +452,18 @@ export type Database = {
       invitation_status: "pending" | "accepted" | "declined" | "expired"
     }
     CompositeTypes: {
-      [_ in never]: never
+      invitation_preview: {
+        id: string | null
+        token: string | null
+        group_id: string | null
+        group_name: string | null
+        email: string | null
+        invited_by: string | null
+        inviter_name: string | null
+        status: Database["public"]["Enums"]["invitation_status"] | null
+        expires_at: string | null
+        created_at: string | null
+      }
     }
   }
 }

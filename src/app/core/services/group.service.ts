@@ -9,6 +9,11 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type GroupInvitation = Database['public']['Tables']['group_invitations']['Row'];
 export type GroupRole = Database['public']['Enums']['group_role'];
 
+/** All invitation data needed by the accept/decline page, returned by the
+ *  get_invitation_preview SECURITY DEFINER RPC so RLS cannot block the group
+ *  name or inviter name even when the invitee is not yet a group member. */
+export type InvitationPreview = Database['public']['CompositeTypes']['invitation_preview'];
+
 /** The current user's membership in a single group, including their role. */
 export interface MyGroupMembership {
   group: Group;
@@ -301,37 +306,21 @@ export class GroupService {
   }
 
   /**
-   * Looks up an invitation by its token. Works for both authenticated users
-   * (who see invitations matching their email) and anonymous users (pre-login preview).
-   * Returns null if not found.
+   * Fetches the full invitation preview for a token via the
+   * get_invitation_preview SECURITY DEFINER RPC, which bypasses RLS so the
+   * group name and inviter display name are always visible to the invitee
+   * even before they become a group member.
+   * Returns null if the token does not match any invitation.
    * @param token The invitation token from the URL.
    */
-  async fetchInvitationByToken(token: string): Promise<GroupInvitationWithGroup | null> {
+  async fetchInvitationPreview(token: string): Promise<InvitationPreview | null> {
     const { data, error } = await this.supabase
-      .from('group_invitations')
-      .select('*, groups(id, name)')
-      .eq('token', token)
-      .maybeSingle();
+      .rpc('get_invitation_preview', { p_token: token });
 
     if (error) throw new Error(error.message);
-    if (!data) return null;
-
-    const inv = data as GroupInvitationWithGroup;
-
-    // The PostgREST join returns null when the invitee's RLS on the groups table
-    // has not yet resolved (e.g. policy propagation delay) or when the join is
-    // blocked. Fall back to a direct query so the group name always shows.
-    if (!inv.groups) {
-      const { data: group } = await this.supabase
-        .from('groups')
-        .select('id, name')
-        .eq('id', inv.group_id)
-        .maybeSingle();
-
-      if (group) inv.groups = group as { id: string; name: string };
-    }
-
-    return inv;
+    // RPC returns a single composite row or null when the token is not found
+    const row = data as InvitationPreview | null;
+    return row?.id ? row : null;
   }
 
   /**

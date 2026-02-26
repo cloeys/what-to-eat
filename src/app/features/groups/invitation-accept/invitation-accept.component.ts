@@ -5,11 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
-import {
-  GroupInvitationWithGroup,
-  GroupService,
-  Profile,
-} from '../../../core/services/group.service';
+import { InvitationPreview, GroupService } from '../../../core/services/group.service';
 
 @Component({
   selector: 'app-invitation-accept',
@@ -28,7 +24,7 @@ import {
           <mat-card-content class="centered">
             <mat-icon fontSet="material-symbols-outlined" class="status-icon success-icon">check_circle</mat-icon>
             <h2>You're in!</h2>
-            <p>You've joined <strong>{{ invitation()?.groups?.name }}</strong>.</p>
+            <p>You've joined <strong>{{ preview()?.group_name }}</strong>.</p>
           </mat-card-content>
           <mat-card-actions align="end">
             <a mat-flat-button routerLink="/recipes">Go to recipes</a>
@@ -37,7 +33,7 @@ import {
           <mat-card-content class="centered">
             <mat-icon fontSet="material-symbols-outlined" class="status-icon">cancel</mat-icon>
             <h2>Invitation declined</h2>
-            <p>You declined the invitation to join <strong>{{ invitation()?.groups?.name }}</strong>.</p>
+            <p>You declined the invitation to join <strong>{{ preview()?.group_name }}</strong>.</p>
           </mat-card-content>
           <mat-card-actions align="end">
             <a mat-flat-button routerLink="/">Go to home</a>
@@ -51,7 +47,7 @@ import {
           <mat-card-actions align="end">
             <a mat-button routerLink="/">Go to home</a>
           </mat-card-actions>
-        } @else if (!invitation()) {
+        } @else if (!preview()) {
           <mat-card-content class="centered">
             <mat-icon fontSet="material-symbols-outlined" class="status-icon">link_off</mat-icon>
             <h2>Invitation not found</h2>
@@ -69,11 +65,11 @@ import {
             <div class="group-info-box">
               <div class="group-name-row">
                 <mat-icon fontSet="material-symbols-outlined" class="group-icon">group</mat-icon>
-                <span class="group-name">{{ invitation()?.groups?.name }}</span>
+                <span class="group-name">{{ preview()!.group_name }}</span>
               </div>
-              @if (inviterProfile()) {
+              @if (preview()!.inviter_name) {
                 <p class="invited-by">
-                  Invited by <strong>{{ inviterProfile()!.display_name }}</strong>
+                  Invited by <strong>{{ preview()!.inviter_name }}</strong>
                 </p>
               }
             </div>
@@ -168,8 +164,7 @@ export class InvitationAcceptComponent implements OnInit {
 
   private readonly token = this.route.snapshot.paramMap.get('token')!;
 
-  protected readonly invitation = signal<GroupInvitationWithGroup | null>(null);
-  protected readonly inviterProfile = signal<Profile | null>(null);
+  protected readonly preview = signal<InvitationPreview | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly actionLoading = signal<'accept' | 'decline' | null>(null);
@@ -179,20 +174,14 @@ export class InvitationAcceptComponent implements OnInit {
     await this.auth.initialized;
 
     if (!this.auth.isAuthenticated()) {
-      await this.router.navigate(['/login'], {
-        queryParams: { returnUrl: `/invitations/${this.token}` },
-      });
+      // Persist the target URL so the callback can restore it after login/OAuth
+      sessionStorage.setItem('auth_return_url', `/invitations/${this.token}`);
+      await this.router.navigate(['/login']);
       return;
     }
 
     try {
-      const inv = await this.groupService.fetchInvitationByToken(this.token);
-      this.invitation.set(inv);
-
-      if (inv?.invited_by) {
-        const profile = await this.groupService.fetchProfile(inv.invited_by);
-        this.inviterProfile.set(profile);
-      }
+      this.preview.set(await this.groupService.fetchInvitationPreview(this.token));
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load invitation.');
     } finally {
