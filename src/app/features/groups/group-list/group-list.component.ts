@@ -3,13 +3,12 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
 import { GroupService } from '../../../core/services/group.service';
 
 @Component({
   selector: 'app-group-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatButtonModule, MatChipsModule, MatIconModule, MatListModule],
+  imports: [RouterLink, MatButtonModule, MatChipsModule, MatIconModule],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -27,11 +26,11 @@ import { GroupService } from '../../../core/services/group.service';
           <a mat-flat-button routerLink="/groups/new">Create your first group</a>
         </div>
       } @else {
-        <mat-list>
+        <div class="group-list">
           @for (m of groupService.memberships(); track m.group.id) {
-            <mat-list-item class="group-item">
-              <span matListItemTitle>{{ m.group.name }}</span>
-              <div matListItemMeta class="item-meta">
+            <div class="group-row">
+              <span class="group-name">{{ m.group.name }}</span>
+              <div class="row-actions">
                 <mat-chip-set>
                   @if (m.group.is_personal) {
                     <mat-chip class="role-chip role-personal" disableRipple>personal</mat-chip>
@@ -48,11 +47,14 @@ import { GroupService } from '../../../core/services/group.service';
                     aria-label="Group settings">
                     <mat-icon fontSet="material-symbols-outlined">settings</mat-icon>
                   </a>
+                } @else {
+                  <!-- placeholder keeps chip vertically centred with rows that have a button -->
+                  <span class="action-placeholder"></span>
                 }
               </div>
-            </mat-list-item>
+            </div>
           }
-        </mat-list>
+        </div>
       }
     </div>
   `,
@@ -93,13 +95,36 @@ import { GroupService } from '../../../core/services/group.service';
       opacity: 0.4;
     }
 
-    .group-item { height: auto !important; padding: 8px 0; }
+    .group-list { display: flex; flex-direction: column; }
 
-    .item-meta {
+    .group-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
     }
+
+    .group-row:last-child { border-bottom: none; }
+
+    .group-name {
+      font: var(--mat-sys-body-large);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    /* 40px matches the mat-icon-button touch target so chips align identically in every row */
+    .action-placeholder { width: 40px; }
 
     .role-chip { font-size: 12px; min-height: 24px; }
     .role-admin    { background-color: var(--mat-sys-primary-container);   color: var(--mat-sys-on-primary-container); }

@@ -89,7 +89,9 @@ export class GroupService {
 
     const memberships = (data as { role: GroupRole; groups: Group | null }[])
       .filter((m): m is { role: GroupRole; groups: Group } => m.groups !== null)
-      .map(m => ({ group: m.groups, role: m.role }));
+      .map(m => ({ group: m.groups, role: m.role }))
+      // Personal group always appears first
+      .sort((a, b) => (b.group.is_personal ? 1 : 0) - (a.group.is_personal ? 1 : 0));
 
     this._memberships.set(memberships);
     this._groups.set(memberships.map(m => m.group));
